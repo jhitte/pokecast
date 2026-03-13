@@ -63,19 +63,25 @@ export default function Pokecast() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
+  // Proper Tailwind dark mode
   useEffect(() => {
-    const saved = localStorage.getItem('theme') as 'dark' | 'light' || 'dark';
-    setTheme(saved);
-    document.documentElement.classList.toggle('light', saved === 'light');
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, []);
 
   const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.classList.toggle('light', newTheme === 'light');
+    if (document.documentElement.classList.contains('dark')) {
+      document.documentElement.classList.remove('dark');
+      localStorage.theme = 'light';
+    } else {
+      document.documentElement.classList.add('dark');
+      localStorage.theme = 'dark';
+    }
   };
 
   const fetchWeather = async (lat: number, lon: number, cityName: string) => {
@@ -190,23 +196,36 @@ export default function Pokecast() {
     .slice(0, 5);
 
   return (
-    <div className={`min-h-screen overflow-hidden ${theme === 'light' ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-white'}`}>
+    <div className="min-h-screen overflow-hidden bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-white">
+      {/* Header + Theme Toggle */}
       <div className="flex justify-between items-center pt-12 pb-8 px-6 max-w-5xl mx-auto">
         <div className="text-center flex-1">
           <h1 className="poke-title text-7xl font-bold text-yellow-400 tracking-widest">POKÉCAST</h1>
-          <p className={`text-xl mt-2 ${theme === 'light' ? 'text-slate-600' : 'text-slate-400'}`}>Weather where Pokémon roam free</p>
+          <p className="text-xl mt-2 text-slate-600 dark:text-slate-400">Weather where Pokémon roam free</p>
         </div>
-        <button onClick={toggleTheme} className="p-3 rounded-full hover:bg-slate-800 transition">
-          {theme === 'dark' ? <Sun size={28} /> : <Moon size={28} />}
+        <button onClick={toggleTheme} className="p-3 rounded-full hover:bg-slate-800 dark:hover:bg-slate-700 transition">
+          {document.documentElement.classList.contains('dark') ? <Sun size={28} /> : <Moon size={28} />}
         </button>
       </div>
 
+      {/* Search */}
       <div className="max-w-2xl mx-auto px-6">
         <form onSubmit={searchCity} className="flex gap-3 mb-8">
-          <input type="text" value={cityInput} onChange={(e) => setCityInput(e.target.value)} placeholder="columbus oh or tucson az" className="flex-1 bg-slate-900 border border-slate-700 rounded-2xl px-6 py-4 text-lg focus:outline-none focus:border-yellow-400" />
-          <button type="submit" disabled={loading} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-8 rounded-2xl flex items-center gap-2"><Search size={20} /> Search</button>
+          <input
+            type="text"
+            value={cityInput}
+            onChange={(e) => setCityInput(e.target.value)}
+            placeholder="columbus oh or tucson az"
+            className="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-2xl px-6 py-4 text-lg focus:outline-none focus:border-yellow-400"
+          />
+          <button type="submit" disabled={loading} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-8 rounded-2xl flex items-center gap-2">
+            <Search size={20} /> Search
+          </button>
         </form>
-        <button onClick={getUserLocation} className="w-full bg-white/10 hover:bg-white/20 border border-white/30 py-4 rounded-2xl flex items-center justify-center gap-3 text-lg font-medium"><MapPin /> Use My Location</button>
+
+        <button onClick={getUserLocation} className="w-full bg-white dark:bg-white/10 hover:bg-white/20 border border-slate-300 dark:border-white/30 py-4 rounded-2xl flex items-center justify-center gap-3 text-lg font-medium">
+          <MapPin /> Use My Location
+        </button>
       </div>
 
       {loading && <div className="text-center mt-12"><Loader2 className="animate-spin mx-auto text-6xl text-yellow-400" /><p className="mt-4 text-slate-400">Calling wild Pokémon...</p></div>}
@@ -215,23 +234,25 @@ export default function Pokecast() {
       {weather && (
         <div className="max-w-5xl mx-auto px-6 py-12">
           <div className={`weather-bg bg-gradient-to-br ${typeColors[weatherCodeMap[weather.weatherCode] || 'cloudy']} rounded-3xl p-12 text-center shadow-2xl`}>
-            <div id="catch-card" className="bg-slate-900 rounded-3xl p-10 border border-yellow-400/50">
-              <h2 className="text-5xl font-bold">{weather.city}</h2>
+            <div id="catch-card" className="bg-white dark:bg-slate-900 rounded-3xl p-10 border border-slate-300 dark:border-yellow-400/50">
+              <h2 className="text-5xl font-bold text-slate-900 dark:text-white">{weather.city}</h2>
               <div className="text-8xl my-6 font-bold text-yellow-400">{weather.temperature}°C / {Math.round(weather.temperature * 9/5 + 32)}°F</div>
-              {flavorText && <p className="text-xl italic text-yellow-300 mb-8">"{flavorText}"</p>}
-              <h3 className="text-3xl mb-8">Wild Pokémon sighted today!</h3>
+              {flavorText && <p className="text-xl italic text-amber-600 dark:text-yellow-300 mb-8">"{flavorText}"</p>}
+              <h3 className="text-3xl mb-8 text-slate-900 dark:text-white">Wild Pokémon sighted today!</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {pokemons.map((p, i) => (
                   <div key={i} className="relative">
                     <PokemonCard name={p.name} sprite={p.sprite} type={p.type} />
-                    <button onClick={() => catchPokemon(p)} className="absolute top-4 right-4 bg-red-500 hover:bg-red-600 px-3 py-1 rounded-full text-xs flex items-center gap-1"><Heart size={14} /> Catch!</button>
+                    <button onClick={() => catchPokemon(p)} className="absolute top-4 right-4 bg-red-500 hover:bg-red-600 px-3 py-1 rounded-full text-xs flex items-center gap-1">
+                      <Heart size={14} /> Catch!
+                    </button>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="flex gap-4 justify-center mt-10 flex-wrap">
-              <button onClick={downloadCard} className="bg-white text-black font-bold px-8 py-4 rounded-2xl flex items-center gap-3 hover:scale-105"><Download /> Download Card</button>
+              <button onClick={downloadCard} className="bg-white dark:bg-white text-black font-bold px-8 py-4 rounded-2xl flex items-center gap-3 hover:scale-105"><Download /> Download Card</button>
               <button onClick={shareOnX} className="bg-[#1DA1F2] text-white font-bold px-8 py-4 rounded-2xl flex items-center gap-3 hover:scale-105"><Twitter /> Tweet this Catch</button>
               <button onClick={copyLink} className="bg-slate-700 text-white font-bold px-8 py-4 rounded-2xl flex items-center gap-3 hover:scale-105"><Copy /> Copy Link</button>
               <button onClick={() => setShowLeaderboard(true)} className="bg-emerald-500 text-white font-bold px-8 py-4 rounded-2xl flex items-center gap-3 hover:scale-105"><Trophy /> Leaderboard</button>
@@ -245,11 +266,11 @@ export default function Pokecast() {
       {/* Leaderboard Modal */}
       {showLeaderboard && (
         <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-6">
-          <div className="bg-slate-900 rounded-3xl max-w-md w-full p-8">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-8">
             <h2 className="text-4xl mb-8 text-center flex items-center justify-center gap-3"><Trophy /> Your Leaderboard</h2>
             <div className="space-y-4">
               {personalLeaderboard.length ? personalLeaderboard.map((p, i) => (
-                <div key={i} className="flex justify-between bg-slate-800 rounded-xl px-6 py-4">
+                <div key={i} className="flex justify-between bg-slate-100 dark:bg-slate-800 rounded-xl px-6 py-4">
                   <span className="font-bold">#{i+1} {p.name}</span>
                   <span className="text-yellow-400">{p.count} caught</span>
                 </div>
@@ -263,7 +284,7 @@ export default function Pokecast() {
       {/* My Pokédex Modal */}
       {showCollection && (
         <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-6">
-          <div className="bg-slate-900 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-auto p-8">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-auto p-8">
             <h2 className="text-4xl mb-8 text-center">My Pokédex</h2>
             {caught.length ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
