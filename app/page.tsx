@@ -63,7 +63,6 @@ export default function Pokecast() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Load/Save collection
   useEffect(() => {
     const saved = localStorage.getItem('pokecast-collection');
     if (saved) setCaught(JSON.parse(saved));
@@ -85,7 +84,6 @@ export default function Pokecast() {
 
       setWeather({ temperature: temp, weatherCode: data.current.weather_code, city: cityName });
 
-      // Get Pokémon
       const types = typeToPokemonTypes[conditionKey];
       const allPokemon: Pokemon[] = [];
       for (const t of types) {
@@ -100,7 +98,6 @@ export default function Pokecast() {
       }
       setPokemons(allPokemon.slice(0, 4));
 
-      // Groq AI flavor text
       const flavorRes = await fetch('/api/flavor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -114,30 +111,30 @@ export default function Pokecast() {
     setLoading(false);
   };
 
-  // 🔥 IMPROVED SEARCH - handles EVERY Franklin variation perfectly
+  // 🔥 SUPER FIXED SEARCH - now handles "tucson az", "franklin oh", "Tucson, AZ", etc. perfectly
   const searchCity = async (e: React.FormEvent) => {
     e.preventDefault();
-    let query = cityInput.trim();
-    if (!query) return;
+    let raw = cityInput.trim();
+    if (!raw) return;
 
-    // Clean input: remove commas, extra spaces, make it flexible
-    query = query.replace(/,/g, ' ').replace(/\s+/g, ' ');
+    // Take ONLY the city name (ignore state like "az", "ohio", "Ohio")
+    const cityNameOnly = raw.split(/[, ]+/)[0];
 
     setLoading(true);
     setError('');
     try {
       const res = await fetch(
-        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json&countrycodes=US`
+        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityNameOnly)}&count=5&language=en&format=json&countrycodes=US`
       );
       const data = await res.json();
       
       if (!data.results?.length) {
-        setError('City not found! Try another name.');
+        setError('City not found! Try just the city name.');
         setLoading(false);
         return;
       }
       
-      const best = data.results[0]; // API ranks best match first
+      const best = data.results[0];
       await fetchWeather(best.latitude, best.longitude, best.name);
     } catch {
       setError('Error searching city');
@@ -197,7 +194,7 @@ export default function Pokecast() {
             type="text"
             value={cityInput}
             onChange={(e) => setCityInput(e.target.value)}
-            placeholder="Franklin, Ohio or franklin oh or franklin"
+            placeholder="tucson az or Franklin, Ohio or franklin"
             className="flex-1 bg-slate-900 border border-slate-700 rounded-2xl px-6 py-4 text-lg focus:outline-none focus:border-yellow-400"
           />
           <button type="submit" disabled={loading} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-8 rounded-2xl flex items-center gap-2">
